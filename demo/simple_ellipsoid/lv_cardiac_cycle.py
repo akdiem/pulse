@@ -100,7 +100,6 @@ def compute_volumes(u):
 lv_volumes = []
 rv_volumes = []
 F_ref = None
-# Solve the problem
 
 tf = 0.85
 steps = pressure_steps + active_steps + relax_steps
