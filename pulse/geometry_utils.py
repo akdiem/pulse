@@ -748,7 +748,10 @@ def save_geometry_to_h5(
             fgroup = "{}/microstructure".format(h5group)
             names = []
             for field in fields:
-                label = field.label() if field.label().rfind("a Function") == -1 else ""
+                try:
+                    label = field.label()
+                except AttributeError:
+                    label = ""
                 name = "_".join(filter(None, [str(field), label]))
                 fsubgroup = "{}/{}".format(fgroup, name)
                 h5file.write(field, fsubgroup)
@@ -865,7 +868,7 @@ def strain_region_number(T, regions):
     For a given point in prolate coordinates,
     return the region it belongs to.
 
-    :param regions: Array of all coordinates for the strain 
+    :param regions: Array of all coordinates for the strain
                     regions taken from the strain mesh.
     :type regions: :py:class:`numpy.array`
 
@@ -935,9 +938,9 @@ def get_sector(regions, theta):
 
 
 def estimate_focal_point(mesh):
-    """Copmute the focal point based on approximating the 
+    """Copmute the focal point based on approximating the
     endocardial surfaces as a ellipsoidal cap.
-    
+
     .. math::
 
            focal = \sqrt{ l^2 - s^2}
