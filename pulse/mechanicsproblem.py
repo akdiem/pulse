@@ -79,7 +79,7 @@ def cardiac_boundary_conditions(
     if geometry.is_biv:
 
         rv_pressure = NeumannBC(
-            traction=Constant(0.0, name="lv_pressure"),
+            traction=Constant(0.0, name="rv_pressure"),
             marker=geometry.markers["ENDO_RV"][0],
             name="rv",
         )
@@ -159,8 +159,6 @@ class MechanicsProblem(object):
                 self.bcs_parameters = MechanicsProblem.default_bcs_parameters()
                 if bcs_parameters is not None:
                     self.bcs_parameters.update(**bcs_parameters)
-                self.bcs_parameters.update(**bcs_parameters)
-
             else:
                 raise ValueError(
                     ("Please provive boundary conditions " "to MechanicsProblem")

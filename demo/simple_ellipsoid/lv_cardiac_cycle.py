@@ -2,40 +2,48 @@ import matplotlib.pyplot as plt
 import dolfin
 import pulse
 import numpy as np
+import sys
 
 if len(sys.argv) > 1:
     gamma_space = sys.argv[1]
 else:
     gamma_space = "R_0"
 
-comm = dolfin.mpi_comm_world()
+comm = dolfin.MPI.comm_world
 
 # Step-wise loading (for plotting and convergence)
-pressure_steps = 50
-active_steps = 30
-relax_steps = 5
-target_pressure = 10.0
-target_active = 40.0
+# gammas from pulse_adjoint optimization
+pressures = [1.0, 10.0, 12.0, 0.5, 1.0]
+gammas = [2.5608192030442395e-10, 0.18940608934909228, 0.22065280788488531,
+            0.051917604971265185, 2.5608192030442395e-10]
+
+phase = 10
 
 #first ramp up pressure, then keep constant
-filling_pressure = np.linspace(0,target_pressure,pressure_steps)
-const_pressure = np.ones(active_steps)*target_pressure
-relax_pressure = np.linspace(target_pressure,0,relax_steps)
-pressures = np.concatenate((filling_pressure,const_pressure,relax_pressure))
+iso_relaxation = np.linspace(pressures[-1], pressures[0], phase)
+rapid_filling = np.linspace(pressures[0], pressures[1], 2*phase)
+reduced_filling = np.linspace(pressures[1], pressures[2], 2*phase)
+rapid_ejection = np.linspace(pressures[2], pressures[3], 2*phase)
+reduced_ejection = np.linspace(pressures[3], pressures[4], phase)
+pressures = np.concatenate((iso_relaxation, rapid_filling, reduced_filling,
+                            rapid_ejection, reduced_ejection))
 
 #zero active tension during filling, then increase linearly
-active1 = np.zeros_like(filling_pressure)
-active2 = np.linspace(0,target_active, active_steps)
-relax = np.linspace(target_active, 0, relax_steps)
-active =  np.concatenate((active1, active2, relax))
+active1 = np.linspace(gammas[-1], gammas[0], 3*phase)
+active2 = np.linspace(gammas[0], gammas[1], phase)
+active3 = np.linspace(gammas[1], gammas[2], phase)
+active4 = np.linspace(gammas[2], gammas[3], phase)
+active5 = np.linspace(gammas[3], gammas[4], 2*phase)
+active =  np.concatenate((active1, active2, active3, active4, active5))
 
 volumes = np.zeros_like(pressures)
 
-geometry = pulse.HeartGeometry.from_file('./N21/lv_geometry.h5')
+geometry = pulse.HeartGeometry.from_file(pulse.mesh_paths['ellipsoid'])
 
 activation = dolfin.Function(dolfin.FunctionSpace(geometry.mesh, "R", 0))
 activation.assign(dolfin.Constant(0.0))
 matparams = pulse.HolzapfelOgden.default_parameters()
+matparams.update({'a': 2.1307174663282646})
 material = pulse.HolzapfelOgden(activation=activation,
                                 parameters=matparams,
                                 active_model="active_stress",
